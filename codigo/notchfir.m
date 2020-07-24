@@ -2,7 +2,7 @@ function [b,a,sys] = notchfir(frecuencia,muestreo,deltanotch,ventana,N)
     % Esta funcion crea un filtro notch fir.
     % Entrada:
     %   frecuencia: frecuencia que se elimina
-    %   muestreo: la frecuencia de muestreo de la señal (para normalizar de 0 a pi)
+    %   muestreo: la frecuencia de muestreo de la seÃ±al (para normalizar de 0 a pi)
     %   deltanotch: el filtro atenua las frecuencias desde
     %   frecuencia-deltanotch hasta frecuencia+deltanotch, segun el orden del
     %   filtro y la ventana, es cuanto las atenua y que tan bien respeta el
@@ -13,7 +13,7 @@ function [b,a,sys] = notchfir(frecuencia,muestreo,deltanotch,ventana,N)
     %   b: numerador
     %   sys: tf del filtro
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Ej: notchfir(0.5,2,0.1,@hamming,80);
+    % Ej: notchfir(0.5,2,0.1,@hamming,80)
 
     %Especificaciones del filtro
     wc = 2*pi*frecuencia/muestreo; %frecuencia a eliminar
