@@ -1,9 +1,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                         %
 %                          Trabajo practico                               %
-%                      Procesamiento de se�ales                           %
+%                      Procesamiento de señales                           %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clc;
+
 % Defino variables globales
 tiempo = 16;
 frecuencia_muestreo =  44100;
@@ -19,6 +21,7 @@ filename = 'C:\Users\Carlos\Downloads\pista_01.wav';
 %filename = 'C:\Users\Carlos\Downloads\pista_07.wav';
 %filename = 'C:\Users\Carlos\Downloads\pista_08.wav';
 
+% corto el audio para que dure 16 segundos.
 audio = audioread(filename);
 audio = audio(1:705601);
 %%%%%%%%%%%%%%%%%%%%%%
@@ -34,9 +37,8 @@ tono_f3 = nuevo_tono(0.02,720,tiempo,frecuencia_muestreo);
 % creo la funcion de interferencia con la suma de los tonos
 tono_final = tono_f1 + tono_f2 + tono_f3;
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Hago la convolucion entre mi se�al de audio y la respuesta impulsiva
+% Hago la convolucion entre mi señal de audio y la respuesta impulsiva
 signal = conv(audio',h.h','same');
 
 % Sumo la interferencia en signal
@@ -45,32 +47,66 @@ signal = signal + tono_final;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Aca empieza el TP                               %
 % Tenemos en signal el audio pasado por la        %
-% transferencia y la interferencia                %
+% transferencia y con la interferencia sumada     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-N=2;
-mycomb = zeros(3,(2*N+1)*2);
-% Filtro Notch
-Q = 10;
-% Filtro la frecuencia f1 = 210
-[b1,a1,sys1] = notch(210, frecuencia_muestreo, Q, N);
-mycomb(1,:) = [b1,a1];
 
+% Primero creo la transferencia del Notch y despues se lo 
+% aplico a signal
+
+% Defino el orden del Notch
+N = 1500;
+% Filtro Notch
+% Filtro la frecuencia f1 = 210
+[b1,a1,sys1] = notchfir(210,frecuencia_muestreo,0.15 * 210,@hamming,N);
+% Descomentar para ver la resp en frec del notch para esa frecuencia %%%%%%
+%freqz(b1, a1, 16e3, frecuencia_muestreo);
+%tono_con_notch = filter(b1,a1,tono_f1);
+%plot(1:705601,tono_con_notch)
 % Filtro la frecuencia f2 = 375
-[b2,a2,sys2] = notch(375, frecuencia_muestreo, Q, N);
-mycomb(2,:) = [b2,a2];
+[b2,a2,sys2] = notchfir(375,frecuencia_muestreo,0.1 * 375,@hamming,N);
 
 % Filtro la frecuencia f3 = 720
-[b3,a3,sys3] = notch(720, frecuencia_muestreo, Q , N);
-mycomb(3,:) = [b3,a3];
+[b3,a3,sys3] = notchfir(720,frecuencia_muestreo,0.05 * 720,@hamming,N);
 
-% Como queda el tono final cuando le paso los Notch's
-notch_final = sos(mycomb,tono_final);
+% Convierto los tres notch's separados en uno solo a0,b0
+% Tiene el problema que no funciona para N > 1
+a = conv(a1,a2);
+a0 = conv(a,a3);
+b = conv(b1,b2);
+b0 = conv(b,b3);
 
-plot(notch_final)
+% Veo que tan bueno es el notch que hice cuando lo paso por 
+% la suma de tonos 'tono_final'
+freqz(b0, a0, 16e3, frecuencia_muestreo);
+tono_con_notch = filter(b0,a0,tono_final);
+audio_con_notch = filter(b0,a0,signal);
 
-% En las variables a1, a2, a3 tengo los coeficientes del denumerador del notch para cada
+plot(1:705601,tono_final,1:705601,tono_con_notch)
+
+plot(1:705601,signal,1:705601,audio_con_notch)
+%**************************************************************************
+%Notch IIR
+Nb = 3;
+delta = 0.01;
+[bb1,ab1] = notch_butter(210, frecuencia_muestreo, delta, Nb);
+[bb2,ab2] = notch_butter(375, frecuencia_muestreo, delta + 0.01, Nb);
+[bb3,ab3] = notch_butter(720, frecuencia_muestreo, delta, Nb);
+bf1 = conv(bb1,bb3);
+%bf = conv(bf1,bb2);
+af1 = conv(ab1,ab3);
+%af = conv(af1,ab2);
+freqz(bf1,af1)
+% Analisis subjetivo
+% Señal con interferencia
+sound(signal, frecuencia_muestreo)
+% Señal con interferencia filtrada
+sound(audio_con_notch, frecuencia_muestreo)
+% Señal original
+sound(audio, frecuencia_muestreo)
+
+% En las variables a1, a2, a3 ,a0 (notch final) tengo los coeficientes del denumerador del notch para cada
 % frecuencia
-% En las variables b1, b2, b3 tengo los coeficientes del numerador del notch para cada
+% En las variables b1, b2, b3 ,b (notch final) tengo los coeficientes del numerador del notch para cada
 % frecuencia
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -82,10 +118,13 @@ plot(notch_final)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Aca va a estar el audio filtrado
 
-Destino = conv(signal,Notch,'same');
-Destino = conv(Destino,equalizador,'same');
+
+% Audio_con_notch 
+%Destino = conv(Destino,equalizador,'same');
 
 % Guardo el audio resultante
-filename = 'destino.wav';
-audiowrite(filename,Destino,frecuencia_muestreo);
+%filename = 'destino.wav';
+%audiowrite(filename,Destino,frecuencia_muestreo);
+
+
 
