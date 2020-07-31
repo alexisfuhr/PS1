@@ -1,5 +1,5 @@
 function [b,a,bap,aap] = inverseiir(hd0)
-    % Devuelve un filtro iir de fase mínima inverso al filtro de la
+    % Devuelve un filtro iir de fase mÃ­nima inverso al filtro de la
     % respuesta al impulso.
     % Entrada:
     %   hd0: vector con la respuesta al impulso del filtro que se desa
@@ -36,12 +36,12 @@ function [b,a,bap,aap] = inverseiir(hd0)
     bap = poly(cmax);
     
     %Descomentar para que grafique la respuesta en frecuencia en veces
-    figure
-    [Hd1,w] = freqz(b,a,2^8);
-    plot(w/pi,abs(Hd1)),grid
-    hold
-    [Hd2,w] = freqz(hd0,1,2^8);
-    plot(w/pi,abs(Hd2))
+    %figure
+    %[Hd1,w] = freqz(b,a,2^8);
+    %plot(w/pi,abs(Hd1)),grid
+    %hold
+    %[Hd2,w] = freqz(hd0,1,2^8);
+    %plot(w/pi,abs(Hd2))
     
     %Descomentar para que grafique el pasatodo
     %figure
@@ -49,6 +49,6 @@ function [b,a,bap,aap] = inverseiir(hd0)
     %plot(w/pi,abs(Hd3))
     
     %Descomentar para que grafique la respuesta en frecuencia total
-    figure
-    plot(w/pi,abs(Hd1).*abs(Hd2))
+    %figure
+    %plot(w/pi,abs(Hd1).*abs(Hd2))
 end
