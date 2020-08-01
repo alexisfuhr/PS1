@@ -27,13 +27,19 @@ function [b,a,bap,aap] = inverseiir(hd0)
     %Polos del sistema inverso fase minima
     pmin = [cmin;1./cmax];
     
-    %Polos del sistema inverso
+    %Sistema inverso
     a = a0*prod(cmax)*poly(pmin);
-    b = 1;
+    b = [1 zeros(1,size(hd0,2)-1)];
+    
+    a = real(a); %Quita la parte imaginaria residual
+    b = real(b);
     
     %Pasa todo
-    aap = poly(1./cmax)*prod(cmax);
-    bap = poly(cmax);
+    aap = poly(cmax);
+    bap = poly(1./cmax)*prod(cmax);
+    
+    aap = real(aap); %Quita la parte imaginaria residual
+    bap = real(bap);
     
     %Descomentar para que grafique la respuesta en frecuencia en veces
     %figure
