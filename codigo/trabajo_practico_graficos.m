@@ -1,14 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                                                                         %
 %                          Trabajo practico                               %
-%                      Procesamiento de señales                           %
+%                      Procesamiento de seÃ±ales                           %
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 close all
 
 % Cargo la respuesta impulsiva de h_sys.mat me devuelve una variable 'h'
 h = load('h_sys.mat');
-
+tiempo = 16;
 frecuencia_muestreo = 44100;
 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -32,29 +32,43 @@ tono_final = tono_f1 + tono_f2 + tono_f3;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Filtro notch IIR
-N=2;
-mycomb = zeros(3,(2*N+1)*2);
 
-Q = 10;
+delta_multiplicativo = 1.1;
+vector_proporcional_frecuencias = [delta_multiplicativo^-2 delta_multiplicativo^-1 delta_multiplicativo delta_multiplicativo^2];
+
 % Filtro la frecuencia f1 = 210
-[b1,a1,sys1] = notch(210, frecuencia_muestreo, Q, N);
-mycomb(1,:) = [b1,a1];
+[b1,a1,sys1] = notchiir(210*vector_proporcional_frecuencias,44100,0.01,0.05,0.05);
 
 % Filtro la frecuencia f2 = 375
-[b2,a2,sys2] = notch(375, frecuencia_muestreo, Q, N);
-mycomb(2,:) = [b2,a2];
+[b2,a2,sys2] = notchiir(375*vector_proporcional_frecuencias,44100,0.01,0.05,0.05);
 
 % Filtro la frecuencia f3 = 720
-[b3,a3,sys3] = notch(720, frecuencia_muestreo, Q , N);
-mycomb(3,:) = [b3,a3];
+[b3,a3,sys3] = notchiir(720*vector_proporcional_frecuencias,44100,0.01,0.05,0.05);
 
-% Como queda el tono final cuando le paso los Notch's
-%notch_final = sos(mycomb,tono_final);
+[b_notch_iir,a_notch_iir] = tfdata(sys1*sys2*sys3,'v');
 
-% En las variables a1, a2, a3 tengo los coeficientes del denumerador del notch para cada
-% frecuencia
-% En las variables b1, b2, b3 tengo los coeficientes del numerador del notch para cada
-% frecuencia
+%Transformada de fourier del filtro
+[Hd_notch_iir,w] = freqz(b_notch_iir,a_notch_iir,2^16);
+
+%Transformada de fourier de los tonos
+fft_tonos = fft(tono_final,2^20)/size(tono_final,2)*2;
+fft_tonos = fft_tonos(1:floor(end/2));
+f_tonos = (0:size(fft_tonos,2)-1)/size(fft_tonos,2)*frecuencia_muestreo/2;
+
+%Dibuja grafico
+fig = figure;
+hold
+plot(w/pi*frecuencia_muestreo/2,20*log(abs(Hd_notch_iir))/log(10),'LineWidth',3),grid
+plot(f_tonos,20*log(abs(fft_tonos))/log(10),'LineWidth',3);
+
+xlim([100 900])
+ylim([-60 20])
+title('Respuesta en frecuencia del filtro notch IIR')
+xlabel('Frecuencia [Hz]')
+ylabel('Amplitud [db]') 
+legend({'Filtro notch IIR','Interferencias'},'Location','northwest')
+print(fig,'img/grafico_notch_iir','-dpng')
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,7 +127,7 @@ ylim([-15 25])
 title('Respuesta en frecuencia del ecualizador FIR')
 xlabel('Frecuencia [Hz]')
 ylabel('Amplitud [db]') 
-legend({'Ecualizador FIR','Sistema electroacústico','Total'},'Location','northwest')
+legend({'Ecualizador FIR','Sistema electroacÃºstico','Total'},'Location','northwest')
 print(fig,'img/grafico_ecualizador_fir','-dpng')
 
 %Retardo de fase
@@ -133,7 +147,7 @@ ylim([40 200])
 title('Retardo de fase')
 xlabel('Frecuencia [Hz]')
 ylabel('Retardo [muestras]') 
-legend({'Ecualizador FIR','Sistema electroacústico','Total'},'Location','northwest')
+legend({'Ecualizador FIR','Sistema electroacÃºstico','Total'},'Location','northwest')
 print(fig,'img/phasedelay_ecualizador_fir','-dpng')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -152,7 +166,7 @@ H_electroacustico = tf(h.h,[1 zeros(1,size(h.h,2)-1)],1/41000);
 
 fig = figure;
 pzmap(H_electroacustico);
-title('Diagrama de polos y ceros del sistema electroacústico')
+title('Diagrama de polos y ceros del sistema electroacÃºstico')
 xlabel('Parte real')
 ylabel('Parte imaginaria') 
 print(fig,'img/pzmap_electroacustico','-dpng')
@@ -162,7 +176,7 @@ H_fase_minima = tf(a_ecualizador_iir,b_ecualizador_iir,1/41000);
 
 fig = figure;
 pzmap(H_fase_minima);
-title('Diagrama de polos y ceros del sistema fase mínima')
+title('Diagrama de polos y ceros del sistema fase mÃ­nima')
 xlabel('Parte real')
 ylabel('Parte imaginaria') 
 print(fig,'img/pzmap_fase_minima','-dpng')
@@ -200,7 +214,7 @@ ylim([-15 25])
 title('Respuesta en frecuencia del ecualizador IIR')
 xlabel('Frecuencia [Hz]')
 ylabel('Amplitud [db]') 
-legend({'Ecualizador IIR','Sistema electroacústico','Total'},'Location','northwest')
+legend({'Ecualizador IIR','Sistema electroacÃºstico','Total'},'Location','northwest')
 print(fig,'img/grafico_ecualizador_iir','-dpng')
 
 %Retardo de fase
@@ -220,7 +234,7 @@ ylim([-10 80])
 title('Retardo de fase')
 xlabel('Frecuencia [Hz]')
 ylabel('Retardo [muestras]') 
-legend({'Ecualizador IIR','Sistema electroacústico','Total'},'Location','northwest')
+legend({'Ecualizador IIR','Sistema electroacÃºstico','Total'},'Location','northwest')
 print(fig,'img/phasedelay_ecualizador_iir','-dpng')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
