@@ -35,8 +35,8 @@ function [b,a,bap,aap] = inverseiir(hd0)
     b = real(b);
     
     %Pasa todo
-    aap = poly(cmax);
-    bap = poly(1./cmax)*prod(cmax);
+    aap = poly(1./cmax)*prod(cmax);
+    bap = poly(cmax);
     
     aap = real(aap); %Quita la parte imaginaria residual
     bap = real(bap);
