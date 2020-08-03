@@ -16,42 +16,50 @@ function [b,a,sys] = notchiir(banda,muestreo,ds,dp1,dp2)
     tustin = @(w) tan(w/2);
     
     %Frecuencias continuas a frecuencias discretas
-    ws1 = banda(1)*2*pi/muestreo;
-    wp1 = banda(2)*2*pi/muestreo;
-    wp2 = banda(3)*2*pi/muestreo;
-    ws2 = banda(4)*2*pi/muestreo;
+    wp1 = banda(1)*2*pi/muestreo;
+    ws1 = banda(2)*2*pi/muestreo;
+    ws2 = banda(3)*2*pi/muestreo;
+    wp2 = banda(4)*2*pi/muestreo;
 
     %Pretransformacion de frecuencias para antidistorsion del tustin
-    ws1 = tustin(ws1);
     wp1 = tustin(wp1);
-    wp2 = tustin(wp2);
+    ws1 = tustin(ws1);
     ws2 = tustin(ws2);
+    wp2 = tustin(wp2);
 
-    %Transformacion a especificaciones pasa bajo
+    %Transformacion a especificaciones pasa bajo 1
     dp = min(dp1,dp2);
     ds = ds;
 
-    w0 = sqrt(wp1*wp2);
-    B = wp2-wp1;
+    wl = wp1;
+    wh = wp2;
 
     wp = 1;
-    ws = min(abs((ws1*B)/(ws1^2-w0^2)),abs((ws2*B)/(ws2^2-w0^2)));
-
+    ws = min(abs((ws1*(wp2-wp1))/(wp1*wp2-ws1^2)),abs((ws2*(wp2-wp1))/(wp1*wp2-ws2^2)));
+    
+    %Transformacion a pasa bajo 2
+%     dp = min(dp1,dp2);
+%     ds = ds;
+%     
+%     wl = ws1;
+%     wh = ws2;
+%     
+%     wp = max(abs((wp1*(ws2-ws1))/(ws1*ws2-wp1^2)),abs((wp2*(ws2-ws1))/(ws1*ws2-wp2^2)));
+%     ws = 1;
+    
     %Especificaciones pasabajos
     [N, w0lp] = especificaciones_butterworth_analogo(dp,ds,wp,ws);
-    
+
     %Crea filtro butterworth
     k = 0:N-1;
     poloslp = w0lp*exp(j*(N+1+2*k)*pi/2/N);
-    poloslp = round(poloslp,4);
 
     %Transformacion pasa banda
     num = [1];
     den = [1];
-
     for sk = poloslp
-        num = conv(num,[1 0 w0^2]);
-        den = conv(den,[1 -sk^-1*B w0^2]);
+        num = conv(num,[1 0 wl*wh]);
+        den = conv(den,[1 -sk^(-1)*(wh-wl) wl*wh]);
     end
     
     %Quita la parte residual imaginaria
@@ -65,9 +73,21 @@ function [b,a,sys] = notchiir(banda,muestreo,ds,dp1,dp2)
     %Toma los datos de la funcion transferencia
     [b,a] = tfdata(Hd,'v');
     sys = Hd;
+    
+    %Otro metodo con tustin implicito
+%     b = [1];
+%     a = [1];
+%     for sk = poloslp
+%         b = conv(b,[1+wl*wh 2*(wl*wh-1) wl*wh+1]);
+%         a = conv(a,[1-sk^(-1)*(wh-wl)+wh*wl -2+2*wh*wl 1+sk^(-1)*(wh-wl)+wh*wl]);
+%     end
+%     b = real(b);
+%     a = real(a);
+%     sys = tf(b,a,2);
 
     %Grafico
-    %figure
-    %[Hd1,w] = freqz(b,a,2048);
-    %plot(w/pi*muestreo/2,abs(Hd1)),grid
+%     figure
+%     [Hd1,w] = freqz(b,a,2^20);
+%     plot(w/pi*muestreo/2,abs(Hd1)),grid
+%     xlim([206 214])
 end
